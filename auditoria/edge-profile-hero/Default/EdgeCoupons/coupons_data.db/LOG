@@ -1,0 +1,5 @@
+2026/09/29-10:38:03.732 8720 Creating DB C:\Users\fhell\Documents\Projetos\template-presente-afeto-kids\auditoria\edge-profile-hero\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/09/29-10:38:03.771 8720 Reusing MANIFEST C:\Users\fhell\Documents\Projetos\template-presente-afeto-kids\auditoria\edge-profile-hero\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/09/29-10:38:05.461 1e24 Level-0 table #5: started
+2026/09/29-10:38:05.468 1e24 Level-0 table #5: 683284 bytes OK
+2026/09/29-10:38:05.474 1e24 Delete type=0 #3

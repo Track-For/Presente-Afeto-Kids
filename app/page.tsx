@@ -15,42 +15,39 @@ import { Header } from "@/app/components/Header";
 import { Hero } from "@/app/components/Hero";
 import { ProductCatalog } from "@/app/components/ProductCatalog";
 import { Reveal } from "@/app/components/Reveal";
-import { products } from "@/app/data/products";
+import { products, type ProductStatus } from "@/app/data/products";
+import { createGeneralWhatsappMessage, createWhatsappUrl, store } from "@/app/data/store";
 
-const storeUrl = "https://presenteafetokids.com.br";
-const whatsappUrl =
-  "https://wa.me/5562999999999?text=Ol%C3%A1%21%20Vim%20pelo%20site%20da%20Presente%20Afeto%20Kids.";
+const storeUrl = store.siteUrl.replace(/\/$/, "");
+const whatsappUrl = createWhatsappUrl(createGeneralWhatsappMessage());
+const schemaAvailability: Partial<Record<ProductStatus, string>> = {
+  disponível: "https://schema.org/InStock",
+  "últimas unidades": "https://schema.org/LimitedAvailability",
+  esgotado: "https://schema.org/OutOfStock",
+};
+
+const localBusiness: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": ["LocalBusiness", "ClothingStore"],
+  name: store.name,
+  description: store.description,
+  image: `${storeUrl}/images/logo.png`,
+  url: storeUrl,
+  address: {
+    "@type": "PostalAddress",
+    ...(store.location.address ? { streetAddress: store.location.address } : {}),
+    addressLocality: store.location.city,
+    addressRegion: store.location.state,
+    addressCountry: "BR",
+  },
+};
+
+if (store.contact.whatsappConfigured) {
+  localBusiness.telephone = `+${store.contact.whatsappNumber}`;
+}
 
 const jsonLd = [
-  {
-    "@context": "https://schema.org",
-    "@type": ["LocalBusiness", "ClothingStore"],
-    name: "Presente Afeto Kids",
-    image: `${storeUrl}/images/logo.png`,
-    url: storeUrl,
-    telephone: "+55 62 99999-9999",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "Endereço da loja",
-      addressLocality: "Goiânia",
-      addressRegion: "GO",
-      addressCountry: "BR",
-    },
-    openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "09:00",
-        closes: "18:00",
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: "Saturday",
-        opens: "09:00",
-        closes: "13:00",
-      },
-    ],
-  },
+  localBusiness,
   {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -63,17 +60,23 @@ const jsonLd = [
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    image: `${storeUrl}${product.image}`,
+    image: product.images.map((image) => `${storeUrl}${image}`),
     description: product.description,
     material: product.material,
-    color: product.colorLabel,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "BRL",
-      price: product.price,
-      availability: "https://schema.org/InStock",
-      url: `${storeUrl}/#${product.id}`,
-    },
+    color: product.colors.map((color) => color.label).join(", "),
+    ...(product.price !== undefined
+      ? {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "BRL",
+            price: product.price,
+            ...(schemaAvailability[product.status]
+              ? { availability: schemaAvailability[product.status] }
+              : {}),
+            url: `${storeUrl}/produtos/${product.slug}`,
+          },
+        }
+      : {}),
   })),
 ];
 
@@ -84,16 +87,16 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <div className="announcement">Entrega em Goiânia e atendimento personalizado pelo WhatsApp</div>
+      <div className="announcement">Moda infantil em Goiânia • atendimento personalizado pelo WhatsApp</div>
       <Header />
-      <main>
+      <main id="conteudo">
         <Hero />
 
         <section id="novidades" className="category-strip" aria-label="Categorias em destaque">
           <a href="#colecao">Vestidos <ArrowRight aria-hidden="true" size={18} /></a>
           <a href="#colecao">Conjuntos <ArrowRight aria-hidden="true" size={18} /></a>
-          <a href="#colecao">Meninas <ArrowRight aria-hidden="true" size={18} /></a>
           <a href="#colecao">Meninos <ArrowRight aria-hidden="true" size={18} /></a>
+          <a href="#colecao">Ver tudo <ArrowRight aria-hidden="true" size={18} /></a>
         </section>
 
         <section id="colecao" className="catalog-section page-shell section-space" aria-labelledby="catalog-title">
@@ -171,11 +174,17 @@ export default function Home() {
             <h2 id="visit-title">Venha conhecer de perto.</h2>
             <p>Veja as peças, sinta os tecidos e encontre o look certo com a nossa ajuda.</p>
             <div className="visit-details">
-              <div><MapPin aria-hidden="true" size={20} /><span><strong>Endereço</strong>Preencha com o endereço da loja, Goiânia - GO</span></div>
-              <div><Clock3 aria-hidden="true" size={20} /><span><strong>Horário</strong>Segunda a sexta, 9h às 18h. Sábado, 9h às 13h.</span></div>
+              <div>
+                <MapPin aria-hidden="true" size={20} />
+                <span><strong>Localização</strong>{store.location.address || `${store.location.city} - ${store.location.state}. Endereço sob consulta.`}</span>
+              </div>
+              <div>
+                <Clock3 aria-hidden="true" size={20} />
+                <span><strong>Horário</strong>{store.hours || "Consulte o horário de atendimento pelo WhatsApp."}</span>
+              </div>
             </div>
-            <a className="button button-primary" href="https://maps.google.com/?q=Goi%C3%A2nia%2C%20GO" target="_blank" rel="noreferrer">
-              <Route aria-hidden="true" size={18} strokeWidth={1.8} /> Traçar rota
+            <a className="button button-primary" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+              <Route aria-hidden="true" size={18} strokeWidth={1.8} /> Confirmar visita
             </a>
           </Reveal>
         </section>
@@ -186,14 +195,14 @@ export default function Home() {
               <Camera aria-hidden="true" size={28} strokeWidth={1.6} />
               <h2 id="social-title">Acompanhe as novidades.</h2>
               <p>Novos looks, combinações e bastidores da loja no Instagram.</p>
-              <a className="text-link" href="https://instagram.com/" target="_blank" rel="noreferrer">
-                @presenteafetokids <ArrowRight aria-hidden="true" size={18} />
+              <a className="text-link" href={store.contact.instagramUrl} target="_blank" rel="noopener noreferrer">
+                {store.contact.instagramHandle} <ArrowRight aria-hidden="true" size={18} />
               </a>
             </Reveal>
             <div className="social-grid" role="group" aria-label="Seleção de looks da coleção">
               {products.slice(0, 4).map((product, index) => (
                 <Reveal key={product.id} className={`social-tile social-tile-${index + 1}`} delay={index * 0.05}>
-                  <Image src={product.image} alt={product.alt} fill sizes="(max-width: 700px) 50vw, 25vw" />
+                  <Image src={product.images[0]} alt={product.alt} fill sizes="(max-width: 700px) 50vw, 25vw" />
                 </Reveal>
               ))}
             </div>
@@ -206,7 +215,7 @@ export default function Home() {
               <h2 id="contact-title">Viu algo que combina com seu pequeno?</h2>
               <p>Fale com a gente para consultar tamanho, cor e disponibilidade.</p>
             </div>
-            <a className="button button-light" href={whatsappUrl} target="_blank" rel="noreferrer">
+            <a className="button button-light" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle aria-hidden="true" size={19} strokeWidth={1.8} /> Falar pelo WhatsApp
             </a>
           </Reveal>
@@ -216,20 +225,20 @@ export default function Home() {
       <footer className="site-footer">
         <div className="page-shell footer-grid">
           <div className="footer-brand">
-            <Image src="/images/logo.png" alt="Presente Afeto Kids" width={104} height={102} />
+            <Image src="/images/logo.png" alt={store.name} width={104} height={102} />
             <p>Moda infantil escolhida com carinho em Goiânia.</p>
           </div>
           <div><strong>Explore</strong><a href="#colecao">Coleção</a><a href="#lookbook">Como usar</a><a href="#sobre">Sobre a loja</a></div>
-          <div><strong>Atendimento</strong><a href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a><a href="https://instagram.com/" target="_blank" rel="noreferrer">Instagram</a><a href="#visite">Localização</a></div>
-          <div><strong>Visite</strong><p>Endereço da loja<br />Goiânia - GO</p><p>Seg a sex, 9h às 18h<br />Sáb, 9h às 13h</p></div>
+          <div><strong>Atendimento</strong><a href={whatsappUrl} target="_blank" rel="noopener noreferrer">WhatsApp</a><a href={store.contact.instagramUrl} target="_blank" rel="noopener noreferrer">Instagram</a><a href="#visite">Localização</a></div>
+          <div><strong>Visite</strong><p>{store.location.address || "Endereço sob consulta"}<br />{store.location.city} - {store.location.state}</p><p>{store.hours || "Horários pelo WhatsApp"}</p></div>
         </div>
         <div className="page-shell footer-bottom">
-          <span>© 2026 Presente Afeto Kids</span>
+          <span>© {new Date().getFullYear()} {store.name}</span>
           <span>Feito para crescer junto com a loja.</span>
         </div>
       </footer>
 
-      <a className="whatsapp-float" href={whatsappUrl} target="_blank" rel="noreferrer" aria-label="Falar com a Presente Afeto Kids pelo WhatsApp">
+      <a className="whatsapp-float" href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={`Falar com a ${store.name} pelo WhatsApp`}>
         <MessageCircle aria-hidden="true" size={24} strokeWidth={1.8} />
       </a>
     </>

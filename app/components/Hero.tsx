@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { ArrowDownRight, MessageCircle } from "lucide-react";
 import { useRef } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { createGeneralWhatsappMessage, createWhatsappUrl } from "@/app/data/store";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 export function Hero() {
   const root = useRef<HTMLElement>(null);
@@ -13,6 +14,14 @@ export function Hero() {
   useGSAP(
     () => {
       const media = gsap.matchMedia();
+      let active = true;
+
+      document.fonts.ready.then(() => {
+        if (active) ScrollTrigger.refresh();
+      });
+
+      const refreshOnOrientationChange = () => ScrollTrigger.refresh();
+      window.addEventListener("orientationchange", refreshOnOrientationChange);
 
       media.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.fromTo(
@@ -35,7 +44,11 @@ export function Hero() {
           .to(content.current, { y: -34, autoAlpha: 0.18, ease: "none" }, 0);
       });
 
-      return () => media.revert();
+      return () => {
+        active = false;
+        window.removeEventListener("orientationchange", refreshOnOrientationChange);
+        media.revert();
+      };
     },
     { scope: root },
   );
@@ -47,16 +60,16 @@ export function Hero() {
           src="/images/hero-kids.jpg"
           alt="Duas crianças sorrindo com looks coloridos da Presente Afeto Kids"
           fill
-          fetchPriority="high"
           loading="eager"
           sizes="100vw"
+          onLoad={() => ScrollTrigger.refresh()}
         />
       </div>
       <div className="hero-wash" aria-hidden="true" />
       <div ref={content} className="hero-content page-shell">
-        <p className="hero-kicker">Moda infantil com afeto</p>
+        <p className="hero-kicker">Moda infantil em Goiânia</p>
         <h1 id="hero-title">A infância veste cor. E muita história.</h1>
-        <p>Roupas leves, alegres e confortáveis para acompanhar cada descoberta.</p>
+        <p>Roupas leves, alegres e confortáveis para bebês e crianças acompanharem cada descoberta.</p>
         <div className="hero-actions">
           <a className="button button-primary" href="#colecao">
             Ver coleção
@@ -64,9 +77,9 @@ export function Hero() {
           </a>
           <a
             className="button button-ghost"
-            href="https://wa.me/5562999999999?text=Ol%C3%A1%21%20Vim%20pelo%20site%20da%20Presente%20Afeto%20Kids."
+            href={createWhatsappUrl(createGeneralWhatsappMessage())}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
             <MessageCircle aria-hidden="true" size={18} strokeWidth={1.8} />
             Falar com a loja

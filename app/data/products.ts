@@ -1,30 +1,50 @@
+export type ProductStatus =
+  | "disponível"
+  | "últimas unidades"
+  | "sob consulta"
+  | "esgotado";
+
 export type Product = {
   id: string;
+  slug: string;
   name: string;
   category: "Vestidos" | "Conjuntos" | "Meninos";
-  price: number;
+  price?: number;
   sizes: string[];
-  color: string;
-  colorLabel: string;
-  status: "Disponível" | "Últimas unidades" | "Sob consulta";
-  image: string;
+  colors: Array<{
+    id: string;
+    label: string;
+  }>;
+  status: ProductStatus;
+  images: string[];
   alt: string;
   description: string;
   material: string;
-  shopeeUrl: string;
+  shopeeUrl?: string;
 };
+
+export const productStatusLabels: Record<ProductStatus, string> = {
+  disponível: "Disponível",
+  "últimas unidades": "Últimas unidades",
+  "sob consulta": "Sob consulta",
+  esgotado: "Esgotado",
+};
+
+export function getProductBySlug(slug: string) {
+  return products.find((product) => product.slug === slug);
+}
 
 export const products: Product[] = [
   {
     id: "vestido-coral",
+    slug: "vestido-jardim-coral-infantil",
     name: "Vestido Jardim Coral",
     category: "Vestidos",
     price: 169.9,
     sizes: ["2", "4", "6", "8"],
-    color: "coral",
-    colorLabel: "Coral",
-    status: "Últimas unidades",
-    image: "/images/vestido-coral.jpg",
+    colors: [{ id: "coral", label: "Coral" }],
+    status: "últimas unidades",
+    images: ["/images/vestido-coral.jpg"],
     alt: "Menina vestindo o Vestido Jardim Coral",
     description:
       "Vestido leve com saia rodada, bordados delicados e alças confortáveis para brincar o dia inteiro.",
@@ -33,14 +53,14 @@ export const products: Product[] = [
   },
   {
     id: "conjunto-ceu",
+    slug: "conjunto-ceu-de-verao-infantil",
     name: "Conjunto Céu de Verão",
     category: "Meninos",
     price: 189.9,
     sizes: ["4", "6", "8", "10"],
-    color: "azul",
-    colorLabel: "Azul céu",
-    status: "Disponível",
-    image: "/images/conjunto-ceu.jpg",
+    colors: [{ id: "azul", label: "Azul céu" }],
+    status: "disponível",
+    images: ["/images/conjunto-ceu.jpg"],
     alt: "Menino vestindo o Conjunto Céu de Verão",
     description:
       "Camisa leve sobre camiseta macia e bermuda de linho misto para dias cheios de movimento.",
@@ -49,14 +69,14 @@ export const products: Product[] = [
   },
   {
     id: "macaquinho-jardim",
+    slug: "macaquinho-jardim-infantil",
     name: "Macaquinho Jardim",
     category: "Conjuntos",
     price: 149.9,
     sizes: ["2", "4", "6"],
-    color: "turquesa",
-    colorLabel: "Turquesa",
-    status: "Disponível",
-    image: "/images/macaquinho-jardim.jpg",
+    colors: [{ id: "turquesa", label: "Turquesa" }],
+    status: "disponível",
+    images: ["/images/macaquinho-jardim.jpg"],
     alt: "Menina vestindo o Macaquinho Jardim turquesa",
     description:
       "Macaquinho fresco com cintura confortável e pequenos bordados florais.",
@@ -65,14 +85,14 @@ export const products: Product[] = [
   },
   {
     id: "polo-listrada",
+    slug: "polo-horizonte-infantil",
     name: "Polo Horizonte",
     category: "Meninos",
     price: 119.9,
     sizes: ["2", "4", "6", "8"],
-    color: "coral",
-    colorLabel: "Coral",
-    status: "Sob consulta",
-    image: "/images/polo-listrada.jpg",
+    colors: [{ id: "coral", label: "Coral" }],
+    status: "sob consulta",
+    images: ["/images/polo-listrada.jpg"],
     alt: "Menino vestindo a Polo Horizonte coral e creme",
     description:
       "Polo em malha macia com listras largas, gola estruturada e toque suave.",
@@ -81,14 +101,14 @@ export const products: Product[] = [
   },
   {
     id: "conjunto-sol",
+    slug: "conjunto-sol-de-goiania-infantil",
     name: "Conjunto Sol de Goiânia",
     category: "Conjuntos",
     price: 179.9,
     sizes: ["6", "8", "10", "12"],
-    color: "amarelo",
-    colorLabel: "Amarelo",
-    status: "Disponível",
-    image: "/images/conjunto-sol.jpg",
+    colors: [{ id: "amarelo", label: "Amarelo" }],
+    status: "disponível",
+    images: ["/images/conjunto-sol.jpg"],
     alt: "Menina vestindo o Conjunto Sol de Goiânia",
     description:
       "Blusa com manga bufante e saia coral de caimento leve para ocasiões especiais.",
@@ -97,14 +117,14 @@ export const products: Product[] = [
   },
   {
     id: "jaqueta-folha",
+    slug: "conjunto-folha-infantil",
     name: "Conjunto Folha",
     category: "Meninos",
     price: 219.9,
     sizes: ["6", "8", "10", "12"],
-    color: "verde",
-    colorLabel: "Verde folha",
-    status: "Últimas unidades",
-    image: "/images/jaqueta-folha.jpg",
+    colors: [{ id: "verde", label: "Verde folha" }],
+    status: "últimas unidades",
+    images: ["/images/jaqueta-folha.jpg"],
     alt: "Menino vestindo o Conjunto Folha verde e terracota",
     description:
       "Jaqueta leve, camiseta macia e calça de sarja confortável para a meia-estação.",

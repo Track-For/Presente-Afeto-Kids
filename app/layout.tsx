@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { store } from "@/app/data/store";
 import "./globals.css";
 
 const displayFont = Cormorant_Garamond({
@@ -14,24 +15,31 @@ const bodyFont = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://presenteafetokids.com.br"),
+  metadataBase: new URL(store.siteUrl),
   title: {
-    default: "Presente Afeto Kids | Moda infantil em Goiânia",
-    template: "%s | Presente Afeto Kids",
+    default: `${store.name} | Moda infantil em Goiânia`,
+    template: `%s | ${store.name}`,
   },
-  description:
-    "Roupas infantis alegres e confortáveis em Goiânia. Conheça a coleção e consulte tamanhos e disponibilidade pelo WhatsApp.",
+  description: store.description,
+  alternates: {
+    canonical: "/",
+  },
   keywords: [
+    "loja infantil Goiânia",
     "loja de roupa infantil em Goiânia",
     "moda infantil Goiânia",
+    "roupa infantil Goiânia",
+    "roupa para bebê Goiânia",
     "roupas para crianças Goiânia",
-    "Presente Afeto Kids",
+    store.name,
   ],
   openGraph: {
-    title: "Presente Afeto Kids",
+    title: store.name,
     description: "Moda infantil com cor, conforto e carinho em Goiânia.",
     type: "website",
     locale: "pt_BR",
+    url: "/",
+    siteName: store.name,
     images: [
       {
         url: "/images/hero-kids.jpg",
@@ -41,19 +49,29 @@ export const metadata: Metadata = {
       },
     ],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: store.name,
+    description: "Moda infantil com cor, conforto e carinho em Goiânia.",
+    images: ["/images/hero-kids.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8f5ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#201b19" },
-  ],
+  themeColor: "#f8f5ef",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${displayFont.variable} ${bodyFont.variable}`}>
-      <body>{children}</body>
+      <body>
+        <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+        {children}
+      </body>
     </html>
   );
 }

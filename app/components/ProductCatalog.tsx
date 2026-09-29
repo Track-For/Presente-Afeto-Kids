@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Check, MessageCircle, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { products, type Product } from "@/app/data/products";
+import Link from "next/link";
+import { Check, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ProductContactActions } from "@/app/components/ProductContactActions";
+import { productStatusLabels, products, type Product } from "@/app/data/products";
 
 const currency = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -24,7 +26,9 @@ const initialFilters: Filters = {
   price: "Todos",
 };
 
-function matchesPrice(price: number, range: string) {
+function matchesPrice(price: number | undefined, range: string) {
+  if (range === "Todos") return true;
+  if (price === undefined) return false;
   if (range === "Até R$ 149") return price <= 149.99;
   if (range === "R$ 150 a R$ 199") return price >= 150 && price <= 199.99;
   if (range === "Acima de R$ 200") return price >= 200;
@@ -38,6 +42,9 @@ function FilterFields({
   filters: Filters;
   setFilters: (filters: Filters) => void;
 }) {
+  const categories = ["Todos", ...new Set(products.map((product) => product.category))];
+  const sizes = ["Todos", ...new Set(products.flatMap((product) => product.sizes))];
+  const colors = ["Todas", ...new Set(products.flatMap((product) => product.colors.map((color) => color.label)))];
   const update = (key: keyof Filters, value: string) =>
     setFilters({ ...filters, [key]: value });
 
@@ -46,7 +53,7 @@ function FilterFields({
       <label>
         Categoria
         <select value={filters.category} onChange={(event) => update("category", event.target.value)}>
-          {['Todos', 'Vestidos', 'Conjuntos', 'Meninos'].map((item) => (
+          {categories.map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
@@ -54,7 +61,7 @@ function FilterFields({
       <label>
         Tamanho
         <select value={filters.size} onChange={(event) => update("size", event.target.value)}>
-          {['Todos', '2', '4', '6', '8', '10', '12'].map((item) => (
+          {sizes.map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
@@ -62,7 +69,7 @@ function FilterFields({
       <label>
         Cor
         <select value={filters.color} onChange={(event) => update("color", event.target.value)}>
-          {['Todas', 'Coral', 'Azul céu', 'Turquesa', 'Amarelo', 'Verde folha'].map((item) => (
+          {colors.map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
@@ -70,7 +77,7 @@ function FilterFields({
       <label>
         Faixa de preço
         <select value={filters.price} onChange={(event) => update("price", event.target.value)}>
-          {['Todos', 'Até R$ 149', 'R$ 150 a R$ 199', 'Acima de R$ 200'].map((item) => (
+          {["Todos", "Até R$ 149", "R$ 150 a R$ 199", "Acima de R$ 200"].map((item) => (
             <option key={item}>{item}</option>
           ))}
         </select>
@@ -80,86 +87,71 @@ function FilterFields({
 }
 
 function ProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
-  const message = encodeURIComponent(
-    `Olá! Vi a peça “${product.name}” no site da Presente Afeto Kids. Gostaria de saber se ela está disponível no tamanho ${selectedSize}.`,
-  );
+  const modalRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusableSelector = "a[href], button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>(focusableSelector));
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", handleKeyDown);
+    closeButtonRef.current?.focus();
     return () => {
       document.body.style.overflow = "";
-      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
     };
   }, [onClose]);
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
+        ref={modalRef}
         className="product-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="product-title"
+        aria-labelledby="product-modal-title"
+        aria-describedby="product-modal-description"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <button className="modal-close" type="button" onClick={onClose} aria-label="Fechar detalhes">
+        <button ref={closeButtonRef} className="modal-close" type="button" onClick={onClose} aria-label="Fechar detalhes">
           <X aria-hidden="true" size={23} strokeWidth={1.8} />
         </button>
         <div className="modal-image">
-          <Image src={product.image} alt={product.alt} fill sizes="(max-width: 760px) 100vw, 46vw" />
+          <Image src={product.images[0]} alt={product.alt} fill sizes="(max-width: 760px) 100vw, 46vw" />
         </div>
         <div className="modal-copy">
           <p className="product-category">{product.category}</p>
-          <h3 id="product-title">{product.name}</h3>
-          <strong className="modal-price">{currency.format(product.price)}</strong>
-          <p>{product.description}</p>
+          <h2 id="product-modal-title">{product.name}</h2>
+          {product.price !== undefined && <strong className="modal-price">{currency.format(product.price)}</strong>}
+          <p id="product-modal-description">{product.description}</p>
           <dl className="product-facts">
             <div><dt>Material</dt><dd>{product.material}</dd></div>
-            <div><dt>Cor</dt><dd>{product.colorLabel}</dd></div>
-            <div><dt>Status</dt><dd>{product.status}</dd></div>
+            <div><dt>Cor</dt><dd>{product.colors.map((color) => color.label).join(", ")}</dd></div>
+            <div><dt>Status</dt><dd>{productStatusLabels[product.status]}</dd></div>
           </dl>
-          <fieldset>
-            <legend>Escolha o tamanho</legend>
-            <div className="size-options">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  className={selectedSize === size ? "selected" : ""}
-                  onClick={() => setSelectedSize(size)}
-                  aria-pressed={selectedSize === size}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <div className="modal-actions">
-            <a
-              className="button button-primary"
-              href={product.shopeeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Comprar ${product.name} na Shopee`}
-            >
-              <ShoppingBag aria-hidden="true" size={18} strokeWidth={1.8} />
-              Comprar na Shopee
-            </a>
-            <a
-              className="button modal-whatsapp"
-              href={`https://wa.me/5562999999999?text=${message}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MessageCircle aria-hidden="true" size={18} strokeWidth={1.8} />
-              Tirar dúvida no WhatsApp
-            </a>
-          </div>
+          <ProductContactActions product={product} />
         </div>
       </section>
     </div>
@@ -170,13 +162,53 @@ export function ProductCatalog() {
   const [filters, setFilters] = useState(initialFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const filterDrawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const filterButton = filterButtonRef.current;
+    const focusableSelector = "button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setFiltersOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !filterDrawerRef.current) return;
+      const focusable = Array.from(filterDrawerRef.current.querySelectorAll<HTMLElement>(focusableSelector));
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+    filterDrawerRef.current?.querySelector<HTMLElement>("button")?.focus();
+
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
+      (previouslyFocused || filterButton)?.focus();
+    };
+  }, [filtersOpen]);
 
   const visibleProducts = useMemo(
     () =>
       products.filter((product) => {
         const categoryMatches = filters.category === "Todos" || product.category === filters.category;
         const sizeMatches = filters.size === "Todos" || product.sizes.includes(filters.size);
-        const colorMatches = filters.color === "Todas" || product.colorLabel === filters.color;
+        const colorMatches = filters.color === "Todas" || product.colors.some((color) => color.label === filters.color);
         return categoryMatches && sizeMatches && colorMatches && matchesPrice(product.price, filters.price);
       }),
     [filters],
@@ -188,44 +220,58 @@ export function ProductCatalog() {
         <div className="desktop-filters">
           <FilterFields filters={filters} setFilters={setFilters} />
         </div>
-        <button className="mobile-filter-button" type="button" onClick={() => setFiltersOpen(true)}>
+        <button
+          ref={filterButtonRef}
+          className="mobile-filter-button"
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          aria-expanded={filtersOpen}
+          aria-controls="catalog-filters"
+        >
           <SlidersHorizontal aria-hidden="true" size={18} strokeWidth={1.8} />
           Filtros
         </button>
-        <span>{visibleProducts.length} peças</span>
+        <span role="status">{visibleProducts.length} {visibleProducts.length === 1 ? "peça" : "peças"}</span>
       </div>
 
       <div className="product-grid" aria-live="polite">
         {visibleProducts.map((product) => (
           <article key={product.id} id={product.id} className="product-card">
-            <button className="product-image" type="button" onClick={() => setSelectedProduct(product)}>
-              <Image src={product.image} alt={product.alt} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+            <button
+              className="product-image"
+              type="button"
+              onClick={() => setSelectedProduct(product)}
+              aria-label={`Ver detalhes de ${product.name}`}
+            >
+              <Image src={product.images[0]} alt={product.alt} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
             </button>
             <div className="product-info">
               <div>
                 <p className="product-category">{product.category}</p>
-                <h3>{product.name}</h3>
+                <h3><Link href={`/produtos/${product.slug}`}>{product.name}</Link></h3>
               </div>
-              <strong>{currency.format(product.price)}</strong>
+              {product.price !== undefined && <strong>{currency.format(product.price)}</strong>}
             </div>
             <div className="product-meta">
               <span>Tamanhos {product.sizes.join(", ")}</span>
-              <button type="button" onClick={() => setSelectedProduct(product)}>
-                Tenho interesse
-              </button>
+              <Link href={`/produtos/${product.slug}`}>Ver peça</Link>
             </div>
             <div className="product-card-footer">
-              <div className="product-status">{product.status}</div>
-              <a
-                className="product-shopee-link"
-                href={product.shopeeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Comprar ${product.name} na Shopee`}
-              >
-                <ShoppingBag aria-hidden="true" size={15} strokeWidth={1.9} />
-                Comprar na Shopee
-              </a>
+              <div className="product-status">{productStatusLabels[product.status]}</div>
+              {product.status !== "esgotado" && product.shopeeUrl ? (
+                <a
+                  className="product-shopee-link"
+                  href={product.shopeeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Comprar ${product.name} na Shopee`}
+                >
+                  <ShoppingBag aria-hidden="true" size={15} strokeWidth={1.9} />
+                  Comprar na Shopee
+                </a>
+              ) : (
+                <Link className="product-details-cta" href={`/produtos/${product.slug}`}>Ver detalhes</Link>
+              )}
             </div>
           </article>
         ))}
@@ -244,9 +290,17 @@ export function ProductCatalog() {
 
       {filtersOpen && (
         <>
-          <div className="filter-drawer" data-open="true">
+          <div
+            ref={filterDrawerRef}
+            id="catalog-filters"
+            className="filter-drawer"
+            data-open="true"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="filter-title"
+          >
             <div className="drawer-header">
-              <h3>Filtrar peças</h3>
+              <h3 id="filter-title">Filtrar peças</h3>
               <button type="button" onClick={() => setFiltersOpen(false)} aria-label="Fechar filtros">
                 <X aria-hidden="true" size={24} strokeWidth={1.8} />
               </button>
