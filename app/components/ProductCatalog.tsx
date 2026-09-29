@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Check, MessageCircle, SlidersHorizontal, X } from "lucide-react";
+import { Check, MessageCircle, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { products, type Product } from "@/app/data/products";
 
@@ -139,15 +139,27 @@ function ProductModal({ product, onClose }: { product: Product; onClose: () => v
               ))}
             </div>
           </fieldset>
-          <a
-            className="button button-primary modal-whatsapp"
-            href={`https://wa.me/5562999999999?text=${message}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <MessageCircle aria-hidden="true" size={18} strokeWidth={1.8} />
-            Perguntar sobre esta peça
-          </a>
+          <div className="modal-actions">
+            <a
+              className="button button-primary"
+              href={product.shopeeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Comprar ${product.name} na Shopee`}
+            >
+              <ShoppingBag aria-hidden="true" size={18} strokeWidth={1.8} />
+              Comprar na Shopee
+            </a>
+            <a
+              className="button modal-whatsapp"
+              href={`https://wa.me/5562999999999?text=${message}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle aria-hidden="true" size={18} strokeWidth={1.8} />
+              Tirar dúvida no WhatsApp
+            </a>
+          </div>
         </div>
       </section>
     </div>
@@ -202,7 +214,19 @@ export function ProductCatalog() {
                 Tenho interesse
               </button>
             </div>
-            <div className="product-status">{product.status}</div>
+            <div className="product-card-footer">
+              <div className="product-status">{product.status}</div>
+              <a
+                className="product-shopee-link"
+                href={product.shopeeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Comprar ${product.name} na Shopee`}
+              >
+                <ShoppingBag aria-hidden="true" size={15} strokeWidth={1.9} />
+                Comprar na Shopee
+              </a>
+            </div>
           </article>
         ))}
       </div>

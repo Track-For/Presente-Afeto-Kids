@@ -11,6 +11,7 @@ export type Product = {
   alt: string;
   description: string;
   material: string;
+  shopeeUrl: string;
 };
 
 export const products: Product[] = [
@@ -28,6 +29,7 @@ export const products: Product[] = [
     description:
       "Vestido leve com saia rodada, bordados delicados e alças confortáveis para brincar o dia inteiro.",
     material: "100% algodão",
+    shopeeUrl: "https://shopee.com.br/search?keyword=vestido%20infantil%20coral",
   },
   {
     id: "conjunto-ceu",
@@ -43,6 +45,7 @@ export const products: Product[] = [
     description:
       "Camisa leve sobre camiseta macia e bermuda de linho misto para dias cheios de movimento.",
     material: "Linho e algodão",
+    shopeeUrl: "https://shopee.com.br/search?keyword=conjunto%20infantil%20azul",
   },
   {
     id: "macaquinho-jardim",
@@ -58,6 +61,7 @@ export const products: Product[] = [
     description:
       "Macaquinho fresco com cintura confortável e pequenos bordados florais.",
     material: "100% algodão",
+    shopeeUrl: "https://shopee.com.br/search?keyword=macaquinho%20infantil%20turquesa",
   },
   {
     id: "polo-listrada",
@@ -73,6 +77,7 @@ export const products: Product[] = [
     description:
       "Polo em malha macia com listras largas, gola estruturada e toque suave.",
     material: "Malha de algodão",
+    shopeeUrl: "https://shopee.com.br/search?keyword=polo%20infantil%20listrada",
   },
   {
     id: "conjunto-sol",
@@ -88,6 +93,7 @@ export const products: Product[] = [
     description:
       "Blusa com manga bufante e saia coral de caimento leve para ocasiões especiais.",
     material: "Viscose e algodão",
+    shopeeUrl: "https://shopee.com.br/search?keyword=conjunto%20infantil%20menina",
   },
   {
     id: "jaqueta-folha",
@@ -103,6 +109,7 @@ export const products: Product[] = [
     description:
       "Jaqueta leve, camiseta macia e calça de sarja confortável para a meia-estação.",
     material: "Sarja de algodão",
+    shopeeUrl: "https://shopee.com.br/search?keyword=conjunto%20infantil%20menino",
   },
 ];
 
